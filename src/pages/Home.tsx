@@ -13,8 +13,11 @@ import {
   getCategories,
   Product,
 } from "@/api/openFoodApi";
-import { Loader2, Package } from "lucide-react";
+import { Loader2, Package, History, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { useCart } from "@/context/CartContext";
+import { useUIDrawer } from "@/context/UIDrawerContext";
 
 const Home = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -27,6 +30,9 @@ const Home = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [totalProducts, setTotalProducts] = useState(0);
+  const navigate = useNavigate();
+  const { totalItems } = useCart();
+  const { openCart } = useUIDrawer();
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -95,34 +101,21 @@ const Home = () => {
     await loadProducts(false, nextPage);
   };
 
-  const sortProducts = (products: Product[]) => {
-    return [...products].sort((a, b) => {
-      switch (sortOption) {
-        case "name-asc":
-          return (a.product_name || "").localeCompare(b.product_name || "");
-        case "name-desc":
-          return (b.product_name || "").localeCompare(a.product_name || "");
-        case "grade-asc":
-          return (a.nutrition_grades || "z").localeCompare(b.nutrition_grades || "z");
-        case "grade-desc":
-          return (b.nutrition_grades || "a").localeCompare(a.nutrition_grades || "a");
-        case "created-asc":
-          return new Date(a.created_t || 0).getTime() - new Date(b.created_t || 0).getTime();
-        case "created-desc":
-          return new Date(b.created_t || 0).getTime() - new Date(a.created_t || 0).getTime();
-        case "popularity":
-          // Use completeness as a proxy for popularity since the API doesn't provide a direct popularity field
-          return (b.completeness || 0) - (a.completeness || 0);
-        default:
-          return 0;
-      }
-    });
-  };
-
-  const sortedProducts = sortProducts(products);
+  // Get sorted products based on sort option
+  const sortedProducts = [...products].sort((a, b) => {
+    if (sortOption === "name-asc") {
+      return (a.product_name || a.product_name_en || "").localeCompare(b.product_name || b.product_name_en || "");
+    } else if (sortOption === "name-desc") {
+      return (b.product_name || b.product_name_en || "").localeCompare(a.product_name || a.product_name_en || "");
+    } else if (sortOption === "grade-asc") {
+      return (a.nutrition_grades || "z").localeCompare(b.nutrition_grades || "z");
+    } else if (sortOption === "grade-desc") {
+      return (b.nutrition_grades || "z").localeCompare(a.nutrition_grades || "z");
+    }
+    return 0;
+  });
 
   return (
-    // Enhanced live animated food background container with multiple themes
     <div className="min-h-screen relative overflow-hidden bg-background">
       {/* New dynamic food-themed background */}
       <div className="fixed inset-0 z-0">
@@ -163,72 +156,84 @@ const Home = () => {
           ))}
         </div>
       </div>
-
-      {/* Content overlay */}
+      
       <div className="relative z-10 min-h-screen bg-background/20 backdrop-blur-sm">
-        {/* Enhanced Header with multi-colored themes */}
-        <header className="sticky top-0 z-40 bg-card/90 backdrop-blur-xl border-b border-border/30 shadow-sm">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center gap-2 mb-3 animate-slide-up">
-              <div className="relative">
-                {/* Animated logo with multiple color themes */}
-                <div className="relative animate-bounce" style={{ animationDuration: '2s' }}>
-                  <Package className="h-8 w-8 text-primary animate-pulse" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-full blur-md animate-pulse-glow"></div>
-                </div>
-              </div>
-              <div className="flex flex-col">
-                {/* Multi-colored animated title with gradient text */}
-                <h1 className="text-xl font-extrabold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent animate-slide-up">
-                  Food Explorer
-                </h1>
-                <p className="text-[10px] text-muted-foreground mt-0.5 animate-slide-up" style={{ animationDelay: "0.3s" }}>
-                  Discover delicious foods with detailed nutritional information
-                </p>
-              </div>
-            </div>
+        {/* Header with cart and order history buttons */}
+        <header className="bg-card/90 backdrop-blur-lg border-b border-border/30 sticky top-0 z-50 shadow-sm">
+          <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent drop-shadow-lg">
+              Food Discoverer
+            </h1>
             
-            {/* Enhanced search section with animations and colored borders */}
-            <div className="grid gap-2 md:grid-cols-2 animate-slide-up" style={{ animationDelay: "0.5s" }}>
-              <div className="border border-primary/20 rounded-lg p-0.5 bg-gradient-to-r from-primary/5 to-secondary/5 shadow-sm hover:shadow-md transition-all duration-300">
-                <SearchBar onSearch={setSearchTerm} />
-              </div>
-              <div className="border border-secondary/20 rounded-lg p-0.5 bg-gradient-to-r from-secondary/5 to-accent/5 shadow-sm hover:shadow-md transition-all duration-300">
-                <BarcodeSearch />
-              </div>
+            {/* Buttons container */}
+            <div className="flex gap-2 items-center">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate("/orders")}
+                className="relative animate-pulse hover:animate-none transition-all duration-300 gap-2"
+              >
+                <History className="h-5 w-5" />
+                <span className="hidden sm:inline">Orders</span>
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                onClick={openCart}
+                className="relative gap-2"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                <span className="hidden sm:inline">Cart</span>
+                {totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {totalItems}
+                  </span>
+                )}
+              </Button>
             </div>
           </div>
         </header>
 
-        {/* Main Content */}
-        <main className="container mx-auto px-4 py-4">
-          {/* Enhanced Filters & Sort with animations */}
-          <div className="flex flex-col md:flex-row gap-2 mb-4 animate-slide-up" style={{ animationDelay: "0.7s" }}>
-            <div className="border border-primary/20 rounded-lg p-0.5 bg-gradient-to-r from-primary/5 to-secondary/5 shadow-xs hover:shadow-sm transition-all duration-300 flex-grow">
-              <CategoryFilter
-                categories={categories}
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-              />
+        {/* Main content */}
+        <div className="container mx-auto px-4 py-6">
+          {/* Search and filters - arranged side by side */}
+          <div className="mb-6 space-y-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <SearchBar onSearch={setSearchTerm} />
+              </div>
+              <div className="flex-1">
+                <BarcodeSearch />
+              </div>
             </div>
-            <div className="border border-secondary/20 rounded-lg p-0.5 bg-gradient-to-r from-secondary/5 to-accent/5 shadow-xs hover:shadow-sm transition-all duration-300 flex-grow">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <CategoryFilter 
+                categories={categories} 
+                selectedCategory={selectedCategory} 
+                onCategoryChange={setSelectedCategory} 
+              />
               <SortMenu sortOption={sortOption} onSortChange={setSortOption} />
             </div>
           </div>
-          
-          {/* Enhanced Stats Card */}
-          {totalProducts > 0 && (
-            <div className="mb-4 animate-slide-up" style={{ animationDelay: "0.9s" }}>
-              <Card className="p-2 border-border bg-card/70 backdrop-blur-md shadow-sm rounded-lg border border-primary/20">
-                <p className="text-center text-xs text-muted-foreground">
-                  Showing <span className="font-bold text-foreground">{products.length}</span> of{' '}
-                  <span className="font-bold text-foreground">{totalProducts.toLocaleString()}</span> products
-                </p>
-              </Card>
-            </div>
-          )}
 
-          {/* Enhanced Products Grid */}
+          {/* Enhanced Results header with unique design */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="relative">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent animate-slide-up">
+                {searchTerm 
+                  ? `Search Results for "${searchTerm}"` 
+                  : selectedCategory !== "all" 
+                    ? `${selectedCategory} Products` 
+                    : "All Products"}
+              </h2>
+              <div className="absolute -bottom-2 left-0 w-20 h-1 bg-gradient-to-r from-primary to-secondary rounded-full animate-pulse"></div>
+            </div>
+            <div className="flex items-center gap-2 bg-card/80 backdrop-blur-sm px-4 py-2 rounded-full border border-border/30 shadow-sm animate-fade-in">
+              <Package className="h-4 w-4 text-primary animate-bounce" />
+              <span className="font-bold text-foreground">{totalProducts.toLocaleString()} products</span>
+            </div>
+          </div>
+
+          {/* Enhanced Products Grid - Fixed to prevent horizontal scroll */}
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[300px]">
               <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -241,13 +246,13 @@ const Home = () => {
               <p className="text-muted-foreground text-base">Try adjusting your search or filters</p>
             </div>
           ) : (
-            <>
+            <div className="overflow-hidden">
               {/* Featured products row with enhanced animations */}
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 mb-6">
                 {sortedProducts.slice(0, 6).map((product, index) => (
                   <div 
                     key={product.code} 
-                    className="animate-slide-up transform transition-all duration-300 hover:scale-105"
+                    className="animate-slide-up transform transition-all duration-300 hover:scale-105 hover:-translate-y-1"
                     style={{ 
                       animationDelay: `${index * 0.05}s`,
                       animationDuration: "0.6s"
@@ -257,22 +262,23 @@ const Home = () => {
                   </div>
                 ))}
               </div>
-
+              
               {/* Show remaining products in responsive grid */}
               {sortedProducts.length > 6 && (
                 <>
                   <div className="flex items-center gap-2 mb-4">
                     <Separator className="flex-grow h-px bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20" />
-                    <span className="text-muted-foreground font-bold text-sm px-3 py-1 bg-card/60 backdrop-blur-md rounded-full border border-border/20 shadow-xs whitespace-nowrap">
+                    <span className="text-muted-foreground font-bold text-sm px-3 py-1 bg-card/60 backdrop-blur-md rounded-full border border-border/20 shadow-xs whitespace-nowrap animate-pulse">
+                      More Products
                     </span>
                     <Separator className="flex-grow h-px bg-gradient-to-r from-accent/20 via-secondary/20 to-primary/20" />
                   </div>
                 
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 mb-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 mb-6">
                     {sortedProducts.slice(6).map((product, index) => (
                       <div 
                         key={product.code} 
-                        className="animate-slide-up transform transition-all duration-300 hover:scale-105"
+                        className="animate-slide-up transform transition-all duration-300 hover:scale-105 hover:-translate-y-1"
                         style={{ 
                           animationDelay: `${(index % 12) * 0.03}s`,
                           animationDuration: "0.5s"
@@ -284,31 +290,34 @@ const Home = () => {
                   </div>
                 </>
               )}
-
-              {/* Enhanced Load More Button */}
+              
+              {/* Enhanced Load More Button with unique design */}
               {hasMore && (
                 <div className="flex justify-center mt-6 mb-6">
                   <Button
                     onClick={loadMore}
                     disabled={loadingMore}
-                    size="sm"
-                    className="min-w-[200px] relative overflow-hidden group shadow-md hover:shadow-primary/30 transition-all duration-500 px-4 py-2 text-base font-bold rounded-lg border border-primary/30 hover:border-primary/60 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 hover:from-primary/20 hover:via-secondary/20 hover:to-primary/20 transform hover:scale-105"
+                    size="lg"
+                    className="min-w-[220px] relative overflow-hidden group shadow-lg hover:shadow-primary/40 transition-all duration-500 px-6 py-3 text-lg font-bold rounded-xl border-2 border-primary/50 hover:border-primary bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 hover:from-primary/20 hover:via-secondary/20 hover:to-primary/20 transform hover:scale-105 hover:-translate-y-1"
                   >
-                    <span className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/20 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 rounded-lg" />
+                    <span className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/30 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 rounded-xl" />
                     {loadingMore ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         Loading More...
                       </>
                     ) : (
-                      "Load More Foods"
+                      <>
+                        <Package className="mr-2 h-5 w-5" />
+                        Load More Foods
+                      </>
                     )}
                   </Button>
                 </div>
               )}
-            </>
+            </div>
           )}
-        </main>
+        </div>
       </div>
     </div>
   );

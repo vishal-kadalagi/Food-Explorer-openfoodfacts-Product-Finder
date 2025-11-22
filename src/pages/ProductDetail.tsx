@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getProductByBarcode, Product } from "@/api/openFoodApi";
-import { Button } from "@/components/ui/button";
+// Button already imported earlier; keep single import
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -10,6 +10,8 @@ import { ArrowLeft, Loader2, Package, Info, AlertTriangle, Leaf, Wheat, Milk, Gl
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatCategoryName } from "@/lib/utils";
+import { useCart } from "@/context/CartContext";
+import { Button } from "@/components/ui/button";
 
 const getNutritionGradeBadgeClass = (grade?: string) => {
   if (!grade) return "bg-muted text-muted-foreground";
@@ -101,6 +103,7 @@ const getDietaryBadges = (product: Product) => {
 
 const ProductDetailComponent = () => {
   const { barcode } = useParams<{ barcode: string }>();
+  const { add } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [isImageExpanded, setIsImageExpanded] = useState(false);
@@ -303,6 +306,23 @@ const ProductDetailComponent = () => {
                 <h1 className="text-3xl font-extrabold text-foreground mb-2 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent animate-slide-up">
                   {displayName}
                 </h1>
+                <div className="flex items-center gap-3 mt-2">
+                  <Button
+                    onClick={() => {
+                      try {
+                        if (product) {
+                          add(product, 1);
+                          toast.success("Added to cart");
+                        }
+                      } catch (e) {
+                        console.error(e);
+                      }
+                    }}
+                    size="sm"
+                  >
+                    Add to Cart
+                  </Button>
+                </div>
                 {product.brands && (
                   <p className="text-xl font-bold text-muted-foreground animate-slide-up" style={{ animationDelay: '0.4s' }}>{product.brands}</p>
                 )}

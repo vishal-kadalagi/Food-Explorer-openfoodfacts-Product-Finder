@@ -13,27 +13,7 @@ This repository contains the Food Explorer web app — a small React + TypeScrip
 
 ---
 
-**How to run locally (Windows PowerShell)**
-
-1. Install dependencies:
-
-```powershell
-npm install
-# Food Explorer — Project Overview
-
-This repository contains the Food Explorer web app — a small React + TypeScript application that uses the OpenFoodFacts public API to let users search for food products, filter by category, and view detailed nutrition and ingredient information by barcode.
-
----
-
-## Quick Summary (human friendly)
-
-- **What it does:** Search products, filter by category, sort results, view product details (nutrients, ingredients, labels), and look up products by barcode using OpenFoodFacts.
-- **Built with:** Vite, React, TypeScript, Tailwind CSS, shadcn-ui, and React Query.
-- **Where to look first:** `src/pages/Home.tsx` (search + results) and `src/pages/ProductDetail.tsx` (detailed view).
-
----
-
-**How to run locally (Windows PowerShell)**
+**How to run locally (Windows PowerShell)
 
 1. Install dependencies:
 
@@ -115,6 +95,26 @@ This section explains the project's structure, how the app flows, and where to c
 ## Template Notes
 
 This repo started from a project template. The original template instructions remain useful for editing via the platform or Codespaces. The app-specific info is above.
+
+---
+
+## Screenshots
+
+Here are some screenshots of the application:
+
+![Screenshot 1](images/1.png)
+
+![Screenshot 2](images/2.png)
+
+![Screenshot 3](images/3.png)
+
+![Screenshot 4](images/4.png)
+
+![Screenshot 5](images/5.png)
+
+![Screenshot 6](images/6.png)
+
+![Screenshot 7](images/7.png)
 
 ---
 

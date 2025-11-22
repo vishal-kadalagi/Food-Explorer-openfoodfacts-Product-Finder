@@ -1,6 +1,9 @@
 import { Product } from "@/api/openFoodApi";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useCart } from "@/context/CartContext";
+import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { cn, formatCategoryName, truncateText } from "@/lib/utils";
 import { Package, Leaf, Wheat, Milk, Star, Flame } from "lucide-react";
@@ -94,6 +97,7 @@ const getProductHighlights = (product: Product) => {
 };
 
 export const ProductCard = ({ product }: ProductCardProps) => {
+  const { add } = useCart();
   const displayName = truncateText(product.product_name || product.product_name_en || "Unnamed Product", 30);
   const category = formatCategoryName(product.categories?.split(",")[0]?.trim() || "Not specified");
   const ingredientsText = product.ingredients_text || "No ingredients listed";
@@ -108,7 +112,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   const imageUrl = product.image_url || product.image_front_url || "";
 
   return (
-    <Link to={`/product/${product.code}`} className="block h-full group">
+    <Link to={`/product/${product.code}`} className="block h-full group relative">
       <Card className="relative overflow-hidden border border-border/50 hover:border-primary/70 bg-card h-full transition-all duration-300 hover:shadow-md hover:shadow-primary/20 cursor-pointer transform hover:-translate-y-0.5 rounded-lg backdrop-blur-sm bg-gradient-to-br from-card to-accent/5 animate-slide-up">
         {/* Product Image Section */}
         <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-accent/10 to-accent/5">
@@ -225,6 +229,28 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               )}
             </div>
           )}
+        </div>
+        {/* Add to cart button positioned over card - stop propagation to avoid navigating */}
+        <div className="absolute top-2 left-2">
+          <Button
+            size="icon"
+            variant="secondary"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              try {
+                add(product, 1);
+                toast.success("Added to cart");
+              } catch (err) {
+                /* noop */
+              }
+            }}
+          >
+            {/* This button will be wired in below via hook */}
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <path d="M3 3h2l.4 2M7 13h10l4-8H5.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Button>
         </div>
       </Card>
     </Link>
